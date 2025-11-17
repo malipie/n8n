@@ -1,0 +1,1024 @@
+{
+  "name": "Github Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "owner": {
+          "__rl": true,
+          "value": "https://github.com/malipie/",
+          "mode": "url"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "events": [
+          "issues"
+        ],
+        "options": {
+          "insecureSSL": false
+        }
+      },
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "604c7578-d559-4ef4-8379-d5cbc2234275",
+      "name": "Github Trigger",
+      "webhookId": "dd0c4ee2-caad-49b6-8c1f-2df61dd5c03c",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert GitHub issue triage bot.\nYour task is to analyze an issue and return ONLY a JSON object with two keys: \"category\" and \"priority\".\n\n- \"category\" can be one of three values: \"bug\", \"feature_request\", \"question\".\n- \"priority\" MUST be one of three values: \"low\", \"medium\", \"high\".\n\nYou MUST follow these strict rules to determine the priority:\n\n1.  **priority: high**\n    Use this ONLY for critical issues:\n    - Mentions \"security\", \"vulnerability\", \"data loss\", \"breach\".\n    - Mentions \"payment failure\", \"checkout broken\", \"costing money\".\n    - Mentions \"fatal\", \"crash\", \"outage\", \"500 error\", or \"system down\".\n\n2.  **priority: medium**\n    Use this for standard, non-critical bugs:\n    - A specific feature is not working as expected (e.g., \"login 'remember me' checkbox broken\", \"upload fails\").\n    - The main app works, but a part of it is broken.\n    - User interface (UI) errors that confuse the user.\n\n3.  **priority: low**\n    Use this for minor issues:\n    - Typos in text.\n    - Visual layout problems that don't break functionality.\n    - Documentation mistakes.\n\nDo not write any explanation, greeting, or any text other than the JSON object."
+            },
+            {
+              "content": "=Issue Title: {{ $json.body.issue.title }}\nIssue Body: {{ $json.body.issue.body }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "57338114-5edf-4f1d-bb62-d808e326e5c4",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "msFtlAWXS4imNYy4",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output[0].content[0].text.category }}",
+                    "rightValue": "bug",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2726cf76-36b3-4145-a41f-5fb8cb58c748"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ddc8827d-a0e4-4096-9d35-c8ec675eb468",
+                    "leftValue": "={{ $json.output[0].content[0].text.category }}",
+                    "rightValue": "feature_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e8da8fa2-3ced-4b89-a70e-4c0bc193f219",
+                    "leftValue": "={{ $json.output[0].content[0].text.category }}",
+                    "rightValue": "question",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        768,
+        0
+      ],
+      "id": "a4816c21-4da9-4ad6-b503-f84f28f09322",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "bug"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        -144
+      ],
+      "id": "96ce0b30-f938-47c9-8416-f50051d85b8b",
+      "name": "Edit an issue",
+      "webhookId": "4da0f09d-fc4a-4eef-8d7a-9c470ac29d1d",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "feature_request"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        16
+      ],
+      "id": "a70e0317-51ae-470b-8066-e25e1e3c44bc",
+      "name": "Edit an issue1",
+      "webhookId": "ad818027-1a99-4927-96c3-03726b9744a9",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "question"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        160
+      ],
+      "id": "982adcc6-6a63-4fbe-8fd3-dc86b0798783",
+      "name": "Edit an issue2",
+      "webhookId": "278a8f71-6275-4445-9012-74a17f8be9f0",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createComment",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "body": "Hello! Thanks for your question.\n\nWe've categorized this as a `question` and our team will get back to you shortly."
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        288
+      ],
+      "id": "6625be6b-3c64-4cb3-8e51-b94732ea7702",
+      "name": "Create a comment on an issue",
+      "webhookId": "a453f8da-ad15-4442-b0b5-959697f7d2a0",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createComment",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "body": "Thanks for the detailed bug report!"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1456,
+        -464
+      ],
+      "id": "bd341c50-b9eb-4d9e-9788-c7936bd44295",
+      "name": "Create a comment on an issue1",
+      "webhookId": "00c42db9-b2b8-46be-8e3a-40b2ef463e10",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createComment",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "body": "Thank you for your suggestion!"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        16
+      ],
+      "id": "4617cdc1-054b-44e1-a22d-af269929dd1a",
+      "name": "Create a comment on an issue2",
+      "webhookId": "067394f8-81fc-459f-9029-93ffbeef7352",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.priority }}",
+                    "rightValue": "low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e71ca3b5-e2d6-4266-81cd-8ec095dec201"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "low"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2119f518-1939-4348-b783-1db500ae4301",
+                    "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.priority }}",
+                    "rightValue": "medium",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "medium"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7bed3436-3cef-4101-9105-ad32e2f802e5",
+                    "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.priority }}",
+                    "rightValue": "high",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "high"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1136,
+        -208
+      ],
+      "id": "de384d7a-58b6-4318-9839-c3343a91706c",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "operation": "createComment",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "body": "Thank you for submitting this issue.\n\nIt has been automatically categorized as a bug with medium priority. Our team will review it and add it to the development queue shortly. We appreciate your help!"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1456,
+        -256
+      ],
+      "id": "6bce2dd0-bcfa-496b-b6a5-156e2f072f08",
+      "name": "Create a comment on an issue3",
+      "webhookId": "00c42db9-b2b8-46be-8e3a-40b2ef463e10",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createComment",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "body": "🔥 **CRITICAL ISSUE DETECTED** 🔥\nThank you for your report. Our system has classified this as a high-priority bug.\n\nThe team has been immediately notified. We will be investigating this as a matter of urgency."
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1456,
+        -48
+      ],
+      "id": "243528a6-5db6-4351-af4d-a61501c3a260",
+      "name": "Create a comment on an issue4",
+      "webhookId": "00c42db9-b2b8-46be-8e3a-40b2ef463e10",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🔥 @here **CRITICAL BUG DETECTED!** 🔥\n\nA new issue has been automatically triaged as a high-priority bug.\n\nTitle: {{ $('Github Trigger').item.json.body.issue.title }} Suggested by: {{ $('Github Trigger').item.json.body.issue.user.login }}\n\nSee Idea: {{ $('Github Trigger').item.json.body.issue.html_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -48
+      ],
+      "id": "3f636496-6d2d-4e44-aca4-16fb6094bbf0",
+      "name": "Discord",
+      "webhookId": "921c0cf3-b61c-4c56-a857-850bd91e8dc7",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "V2WK1BpM320F9oOI",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🐞 **New Medium Priority Bug**\nA new issue has been categorized as a medium-priority bug.\n\nTitle: {{ $('Github Trigger').item.json.body.issue.title }} Suggested by: {{ $('Github Trigger').item.json.body.issue.user.login }}\n\nSee Idea: {{ $('Github Trigger').item.json.body.issue.html_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -256
+      ],
+      "id": "72de8fb9-03d1-48e1-81d9-30ed09d4c7d6",
+      "name": "Discord1",
+      "webhookId": "921c0cf3-b61c-4c56-a857-850bd91e8dc7",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "V2WK1BpM320F9oOI",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🐞 **New Standard Priority Bug**\nA new issue has been categorized as bug.\n\nTitle: {{ $('Github Trigger').item.json.body.issue.title }} Suggested by: {{ $('Github Trigger').item.json.body.issue.user.login }}\n\nSee Idea: {{ $('Github Trigger').item.json.body.issue.html_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        -464
+      ],
+      "id": "7fe2597b-29ab-4525-83cb-0b9a6f0afd64",
+      "name": "Discord2",
+      "webhookId": "921c0cf3-b61c-4c56-a857-850bd91e8dc7",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "V2WK1BpM320F9oOI",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=✨ **New Feature Request!**\nA new feature request has been submitted.\n\nTitle: {{ $('Github Trigger').item.json.body.issue.title }} Suggested by: {{ $('Github Trigger').item.json.body.issue.user.login }}\n\nSee Idea: {{ $('Github Trigger').item.json.body.issue.html_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        176
+      ],
+      "id": "9e347b54-7bc2-4fb7-8b8f-807db0d1880f",
+      "name": "Discord3",
+      "webhookId": "921c0cf3-b61c-4c56-a857-850bd91e8dc7",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "V2WK1BpM320F9oOI",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "critical-bug"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1664,
+        -48
+      ],
+      "id": "6249e92c-5eeb-48ec-a266-f4d30000a1ea",
+      "name": "Edit an issue3",
+      "webhookId": "c0eb8f65-d6ed-413a-869c-ae1c122b851a",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "bug"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1664,
+        -256
+      ],
+      "id": "412b428c-d7c6-4396-833c-023c6633ccb9",
+      "name": "Edit an issue4",
+      "webhookId": "c0eb8f65-d6ed-413a-869c-ae1c122b851a",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "malipie",
+          "mode": "list",
+          "cachedResultName": "malipie",
+          "cachedResultUrl": "https://github.com/malipie"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-triage-project",
+          "mode": "list",
+          "cachedResultName": "n8n-triage-project",
+          "cachedResultUrl": "https://github.com/malipie/n8n-triage-project"
+        },
+        "issueNumber": "={{ $('Github Trigger').item.json.body.issue.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "bug"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1664,
+        -464
+      ],
+      "id": "170e7cbb-8650-4ba1-8243-5dd444c219c1",
+      "name": "Edit an issue5",
+      "webhookId": "c0eb8f65-d6ed-413a-869c-ae1c122b851a",
+      "credentials": {
+        "githubApi": {
+          "id": "MUrxF8mhlmNPjbzA",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "625e9dd1-fad0-4e30-8ee0-0207fe61e6c5",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "opened",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        16
+      ],
+      "id": "13f95f9c-a264-4cc8-9702-2e1342830c3c",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Github Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit an issue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit an issue1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit an issue2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit an issue2": {
+      "main": [
+        [
+          {
+            "node": "Create a comment on an issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit an issue": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit an issue1": {
+      "main": [
+        [
+          {
+            "node": "Create a comment on an issue2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Create a comment on an issue1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a comment on an issue3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a comment on an issue4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment on an issue4": {
+      "main": [
+        [
+          {
+            "node": "Edit an issue3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment on an issue3": {
+      "main": [
+        [
+          {
+            "node": "Edit an issue4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment on an issue1": {
+      "main": [
+        [
+          {
+            "node": "Edit an issue5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment on an issue2": {
+      "main": [
+        [
+          {
+            "node": "Discord3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit an issue3": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit an issue4": {
+      "main": [
+        [
+          {
+            "node": "Discord1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit an issue5": {
+      "main": [
+        [
+          {
+            "node": "Discord2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d4f7f3f3-a2cc-4efa-b322-d52cfec7955e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d28cccabf1dd3b81c1b01aba2a9d619ec84cfb4b024213ade53468a400f6ee66"
+  },
+  "id": "Vzr53fWgMksaWlMs",
+  "tags": []
+}
